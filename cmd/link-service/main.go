@@ -4,41 +4,64 @@ import (
 	"log"
 	"net"
 
-	"google.golang.org/grpc"
-
 	internalgrpc "github.com/sameer2006-s/grpc-url-shortner/internal/grpc"
-	"github.com/sameer2006-s/grpc-url-shortner/internal/store"
+	"github.com/sameer2006-s/grpc-url-shortner/internal/repository"
+	"github.com/sameer2006-s/grpc-url-shortner/internal/service"
 	pb "github.com/sameer2006-s/grpc-url-shortner/gen/proto"
+
+	"google.golang.org/grpc"
 )
 
 func main() {
 
-	lis, err :=
-		net.Listen(
-			"tcp",
-			":50051",
-		)
-
+	// Transport
+	lis, err := net.Listen(
+		"tcp",
+		":50051",
+	)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	server :=
+	// Repository
+	repo :=
+		repository.
+			NewMemoryRepository()
+
+	// Business logic
+	linkService :=
+		service.
+			NewLinkService(
+				repo,
+			)
+
+	// gRPC handler
+	linkServer :=
+		internalgrpc.
+			NewLinkServer(
+				linkService,
+			)
+
+	// Server
+	grpcServer :=
 		grpc.NewServer()
 
-	storage :=
-		store.NewMemoryStore()
-
 	pb.RegisterLinkServiceServer(
-		server,
-		internalgrpc.NewLinkServer(
-			storage,
-		),
+		grpcServer,
+		linkServer,
 	)
 
 	log.Println(
-		"link-service :50051",
+		"link-service listening on :50051",
 	)
 
-	server.Serve(lis)
+	err =
+		grpcServer.
+			Serve(
+				lis,
+			)
+
+	if err != nil {
+		log.Fatal(err)
+	}
 }
