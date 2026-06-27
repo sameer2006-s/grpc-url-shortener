@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package link;
+
+option go_package = "github.com/sameer2006-s/grpc-url-shortner/gen/proto";
+
+service LinkService {
+  rpc CreateLink(CreateLinkRequest) returns (CreateLinkResponse);
+  rpc GetLink(GetLinkRequest) returns (GetLinkResponse);
+}
+
+message CreateLinkRequest {
+  string url = 1;
+}
+
+message CreateLinkResponse {
+  string short_url = 1;
+}
+
+message GetLinkRequest {
+  string short_url = 1;
+}
+
+message GetLinkResponse {
+  string url = 1;
+}
