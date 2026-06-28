@@ -21,6 +21,8 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	LinkService_CreateLink_FullMethodName = "/link.LinkService/CreateLink"
 	LinkService_GetLink_FullMethodName    = "/link.LinkService/GetLink"
+	LinkService_VisitLink_FullMethodName  = "/link.LinkService/VisitLink"
+	LinkService_GetStats_FullMethodName   = "/link.LinkService/GetStats"
 )
 
 // LinkServiceClient is the client API for LinkService service.
@@ -29,6 +31,8 @@ const (
 type LinkServiceClient interface {
 	CreateLink(ctx context.Context, in *CreateLinkRequest, opts ...grpc.CallOption) (*CreateLinkResponse, error)
 	GetLink(ctx context.Context, in *GetLinkRequest, opts ...grpc.CallOption) (*GetLinkResponse, error)
+	VisitLink(ctx context.Context, in *VisitLinkRequest, opts ...grpc.CallOption) (*VisitLinkResponse, error)
+	GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*GetStatsResponse, error)
 }
 
 type linkServiceClient struct {
@@ -59,12 +63,34 @@ func (c *linkServiceClient) GetLink(ctx context.Context, in *GetLinkRequest, opt
 	return out, nil
 }
 
+func (c *linkServiceClient) VisitLink(ctx context.Context, in *VisitLinkRequest, opts ...grpc.CallOption) (*VisitLinkResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(VisitLinkResponse)
+	err := c.cc.Invoke(ctx, LinkService_VisitLink_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *linkServiceClient) GetStats(ctx context.Context, in *GetStatsRequest, opts ...grpc.CallOption) (*GetStatsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetStatsResponse)
+	err := c.cc.Invoke(ctx, LinkService_GetStats_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // LinkServiceServer is the server API for LinkService service.
 // All implementations must embed UnimplementedLinkServiceServer
 // for forward compatibility.
 type LinkServiceServer interface {
 	CreateLink(context.Context, *CreateLinkRequest) (*CreateLinkResponse, error)
 	GetLink(context.Context, *GetLinkRequest) (*GetLinkResponse, error)
+	VisitLink(context.Context, *VisitLinkRequest) (*VisitLinkResponse, error)
+	GetStats(context.Context, *GetStatsRequest) (*GetStatsResponse, error)
 	mustEmbedUnimplementedLinkServiceServer()
 }
 
@@ -80,6 +106,12 @@ func (UnimplementedLinkServiceServer) CreateLink(context.Context, *CreateLinkReq
 }
 func (UnimplementedLinkServiceServer) GetLink(context.Context, *GetLinkRequest) (*GetLinkResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method GetLink not implemented")
+}
+func (UnimplementedLinkServiceServer) VisitLink(context.Context, *VisitLinkRequest) (*VisitLinkResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method VisitLink not implemented")
+}
+func (UnimplementedLinkServiceServer) GetStats(context.Context, *GetStatsRequest) (*GetStatsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetStats not implemented")
 }
 func (UnimplementedLinkServiceServer) mustEmbedUnimplementedLinkServiceServer() {}
 func (UnimplementedLinkServiceServer) testEmbeddedByValue()                     {}
@@ -138,6 +170,42 @@ func _LinkService_GetLink_Handler(srv interface{}, ctx context.Context, dec func
 	return interceptor(ctx, in, info, handler)
 }
 
+func _LinkService_VisitLink_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(VisitLinkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LinkServiceServer).VisitLink(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LinkService_VisitLink_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LinkServiceServer).VisitLink(ctx, req.(*VisitLinkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _LinkService_GetStats_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetStatsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(LinkServiceServer).GetStats(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: LinkService_GetStats_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(LinkServiceServer).GetStats(ctx, req.(*GetStatsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // LinkService_ServiceDesc is the grpc.ServiceDesc for LinkService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +220,14 @@ var LinkService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetLink",
 			Handler:    _LinkService_GetLink_Handler,
+		},
+		{
+			MethodName: "VisitLink",
+			Handler:    _LinkService_VisitLink_Handler,
+		},
+		{
+			MethodName: "GetStats",
+			Handler:    _LinkService_GetStats_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

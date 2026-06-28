@@ -14,8 +14,11 @@ type PostgresRepository struct {
 }
 
 type LinkRepository interface {
-	Save(link model.Link) error
-	Get(code string) (model.Link, bool)
+    Save(link model.Link) error
+
+    Get(code string) (model.Link,bool)
+
+    IncrementClicks(code string,) error
 }
 
 func NewPostgresRepository(db *pgx.Conn) *PostgresRepository {
@@ -27,9 +30,22 @@ func NewPostgresRepository(db *pgx.Conn) *PostgresRepository {
 func (r *PostgresRepository) Save(link model.Link) error {
 	_, err := r.db.Exec(context.Background(), `
 INSERT INTO links
-(id, short_code, url)
-VALUES ($1,$2,$3)
-`, uuid.New(), link.ShortCode, link.URL)
+(
+	id,
+	short_code,
+	url,
+	clicks,
+	created_at
+)
+VALUES
+(
+	$1,
+	$2,
+	$3,
+	$4,
+	$5
+)
+`, uuid.New(), link.ShortCode, link.URL , link.Clicks, link.CreatedAt)
 
 	return err
 }
@@ -40,14 +56,31 @@ func (r *PostgresRepository) Get(code string) (model.Link, bool) {
 	err := r.db.QueryRow(context.Background(), `
 SELECT
 short_code,
-url
+url,
+clicks,
+created_at
 FROM links
 WHERE short_code=$1
-`, code).Scan(&link.ShortCode, &link.URL)
+`, code).Scan(&link.ShortCode, &link.URL, &link.Clicks, &link.CreatedAt)
 
 	if err != nil {
 		return model.Link{}, false
 	}
 
 	return link, true
+}
+
+func (r *PostgresRepository) IncrementClicks(code string,) error {
+    _, err :=
+        r.db.Exec(
+            context.Background(),
+            `
+UPDATE links
+SET clicks = clicks + 1
+WHERE short_code=$1
+`,
+            code,
+        )
+
+    return err
 }

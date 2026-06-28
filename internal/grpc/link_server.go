@@ -34,3 +34,22 @@ func (s *LinkServer) GetLink(ctx context.Context, req *pb.GetLinkRequest) (*pb.G
 	url, _ := s.service.GetLink(req.ShortUrl)
 	return &pb.GetLinkResponse{Url: url}, nil
 }
+
+func (s *LinkServer) VisitLink(ctx context.Context, req *pb.VisitLinkRequest) (*pb.VisitLinkResponse, error) {
+	redirectURL, err := s.service.VisitLink(req.ShortUrl)
+	if err != nil {
+		if err == service.ErrNotFound {
+			return nil, status.Errorf(codes.NotFound, "link not found: %v", err)
+		}
+		return nil, status.Errorf(codes.Internal, "visit link: %v", err)
+	}
+	return &pb.VisitLinkResponse{RedirectUrl: redirectURL}, nil
+}
+
+func (s *LinkServer) GetStats(ctx context.Context, req *pb.GetStatsRequest) (*pb.GetStatsResponse, error) {
+	clicks, createdAt, err := s.service.GetStats(req.ShortUrl)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "get stats: %v", err)
+	}
+	return &pb.GetStatsResponse{Clicks: int32(clicks), CreatedAt: createdAt}, nil
+}

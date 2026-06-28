@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"log"
 	"net/http"
 
@@ -42,6 +43,31 @@ func main() {
 		}
 
 		w.Write([]byte(res.Url))
+	})
+
+	http.HandleFunc("/visit", func(w http.ResponseWriter, r *http.Request) {
+		code := r.URL.Query().Get("code")
+
+		res, err := client.VisitLink(context.Background(), &pb.VisitLinkRequest{ShortUrl: code})
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		http.Redirect(w, r, res.RedirectUrl, http.StatusMovedPermanently)
+	})
+
+	http.HandleFunc("/stats", func(w http.ResponseWriter, r *http.Request) {
+		code := r.URL.Query().Get("code")
+
+		res, err := client.GetStats(context.Background(), &pb.GetStatsRequest{ShortUrl: code})
+		if err != nil {
+			http.Error(w, err.Error(), 500)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(res)
 	})
 
 	log.Println("api :8080")

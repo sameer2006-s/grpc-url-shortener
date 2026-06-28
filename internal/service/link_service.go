@@ -1,6 +1,7 @@
 package service
 
 import (
+	"time"
 	"github.com/google/uuid"
 
 	"github.com/sameer2006-s/grpc-url-shortner/internal/model"
@@ -18,7 +19,8 @@ func NewLinkService(repo repository.LinkRepository) *LinkService {
 func (s *LinkService) CreateLink(url string) (string, error) {
 	code := "link-" + uuid.NewString()[:8]
 
-	err := s.repo.Save(model.Link{ShortCode: code, URL: url})
+	err :=s.repo.Save(model.Link{ShortCode: code,URL: url,CreatedAt: time.Now(), Clicks: 0,})	
+
 	if err != nil {
 		return "", err
 	}
@@ -30,3 +32,29 @@ func (s *LinkService) GetLink(code string) (string, bool) {
 	link, ok := s.repo.Get(code)
 	return link.URL, ok
 }
+
+func (s *LinkService) VisitLink(code string,) (string,error,) {
+    link, ok := s.repo.Get(code)
+
+    if !ok {
+        return "", ErrNotFound
+    }
+
+    err :=s.repo.IncrementClicks(code)
+
+    if err != nil {
+        return "", err
+    }
+
+    return link.URL, nil
+}
+
+func (s *LinkService) GetStats(code string,) (int,string,error,) {
+	link, ok := s.repo.Get(code)
+
+	if !ok {
+		return 0,"", ErrNotFound
+	}
+
+	return link.Clicks, link.CreatedAt.Format(time.RFC3339), nil
+}	
