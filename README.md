@@ -1,19 +1,18 @@
 # gRPC URL Shortener
 
-Small Go gRPC service that stores URL mappings in memory.
+A simple Go gRPC service for shortening URLs using PostgreSQL.
 
 ## What it does
 
-The service exposes two RPCs:
+- `CreateLink(url)` - Returns a short code for a URL
+- `GetLink(short_code)` - Returns the original URL
 
-- `CreateLink` accepts a URL and returns a short code.
-- `GetLink` accepts a short code and returns the original URL.
+## Setup
 
-Current behavior is intentionally simple:
-
-- Storage is in-memory only, so all data is lost on restart.
-- Short codes are generated from the URL length, for example `link18`.
-- gRPC reflection is not enabled.
+Set `DATABASE_URL` in `.env`:
+```bash
+DATABASE_URL=postgres://user:password@localhost:5432/dbname?sslmode=disable
+```
 
 ## Run
 
@@ -25,36 +24,45 @@ The server listens on `localhost:50051`.
 
 ## API
 
-Proto definition: [proto/link.proto](proto/link.proto)
-
 ```proto
 service LinkService {
   rpc CreateLink(CreateLinkRequest) returns (CreateLinkResponse);
   rpc GetLink(GetLinkRequest) returns (GetLinkResponse);
 }
+
+message CreateLinkRequest {
+  string url = 1;
+}
+
+message CreateLinkResponse {
+  string short_url = 1;
+}
+
+message GetLinkRequest {
+  string short_url = 1;
+}
+
+message GetLinkResponse {
+  string url = 1;
+}
 ```
 
-Requests and responses:
+See [proto/link.proto](proto/link.proto) for details.
 
-- `CreateLinkRequest { string url = 1; }`
-- `CreateLinkResponse { string short_url = 1; }`
-- `GetLinkRequest { string short_url = 1; }`
-- `GetLinkResponse { string url = 1; }`
+## Example
 
-## Example with grpcurl
-
-Because reflection is disabled, point `grpcurl` at the proto file:
-
+Create a short link:
 ```bash
 grpcurl -plaintext -import-path proto -proto link.proto \
-	-d '{"url":"https://google.com"}' \
-	localhost:50051 link.LinkService/CreateLink
+  -d '{"url":"https://google.com"}' \
+  localhost:50051 link.LinkService/CreateLink
 ```
 
+Get the original URL:
 ```bash
 grpcurl -plaintext -import-path proto -proto link.proto \
-	-d '{"short_url":"link18"}' \
-	localhost:50051 link.LinkService/GetLink
+  -d '{"short_url":"link-xxx"}' \
+  localhost:50051 link.LinkService/GetLink
 ```
 
 ## Regenerate protobufs
