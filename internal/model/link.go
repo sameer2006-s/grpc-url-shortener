@@ -5,7 +5,6 @@ import "time"
 type Link struct {
 	ShortCode string
 	URL       string
-
-	Clicks int
+	Clicks    int
 	CreatedAt time.Time
 }

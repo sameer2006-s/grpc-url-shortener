@@ -1,0 +1,77 @@
+services:
+
+  postgres:
+    image: postgres:18
+
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - postgres_data:/var/lib/postgresql
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER} -d ${DB_NAME}"
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  migrate:
+    image: migrate/migrate
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+    volumes:
+      - ./migrations:/migrations
+
+    command:
+      [
+        "-path",
+        "/migrations",
+        "-database",
+        "postgres://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}?sslmode=disable",
+        "up"
+      ]
+
+  link-service:
+    build:
+      context: .
+      dockerfile: services/link-service/DockerFile
+
+    env_file:
+      - .env
+
+    ports:
+      - "50051:50051"
+
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  api-service:
+    build:
+      context: .
+      dockerfile: services/api-service/DockerFile
+
+    env_file:
+      - .env
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      link-service:
+        condition: service_started
+
+volumes:
+  postgres_data:

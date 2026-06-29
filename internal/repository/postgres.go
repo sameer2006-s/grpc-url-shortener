@@ -14,11 +14,11 @@ type PostgresRepository struct {
 }
 
 type LinkRepository interface {
-    Save(link model.Link) error
+	Save(link model.Link) error
 
-    Get(code string) (model.Link,bool)
+	Get(code string) (model.Link, bool)
 
-    IncrementClicks(code string,) error
+	IncrementClicks(code string) error
 }
 
 func NewPostgresRepository(db *pgx.Conn) *PostgresRepository {
@@ -45,7 +45,7 @@ VALUES
 	$4,
 	$5
 )
-`, uuid.New(), link.ShortCode, link.URL , link.Clicks, link.CreatedAt)
+`, uuid.New(), link.ShortCode, link.URL, link.Clicks, link.CreatedAt)
 
 	return err
 }
@@ -70,17 +70,17 @@ WHERE short_code=$1
 	return link, true
 }
 
-func (r *PostgresRepository) IncrementClicks(code string,) error {
-    _, err :=
-        r.db.Exec(
-            context.Background(),
-            `
+func (r *PostgresRepository) IncrementClicks(code string) error {
+	_, err :=
+		r.db.Exec(
+			context.Background(),
+			`
 UPDATE links
 SET clicks = clicks + 1
 WHERE short_code=$1
 `,
-            code,
-        )
+			code,
+		)
 
-    return err
+	return err
 }
