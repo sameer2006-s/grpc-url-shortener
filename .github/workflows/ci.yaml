@@ -1,52 +1,48 @@
 name: CI
 
 on:
-push:
-branches:
-- main
-- develop
+  push:
+    branches:
+      - main
+      - develop
 
-pull_request:
+  pull_request:
 
 jobs:
-test:
+  test:
+    runs-on: ubuntu-latest
 
-```
-runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
-steps:
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.26"
 
-  - name: Checkout
-    uses: actions/checkout@v4
+      - name: Download dependencies
+        run: go mod download
 
-  - name: Setup Go
-    uses: actions/setup-go@v5
-    with:
-      go-version: "1.26"
+      - name: Format check
+        run: |
+          if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
+            echo "Code is not formatted"
+            gofmt -l .
+            exit 1
+          fi
 
-  - name: Download dependencies
-    run: go mod download
+      - name: Vet
+        run: go vet ./...
 
-  - name: Format check
-    run: |
-      if [ "$(gofmt -l . | wc -l)" -gt 0 ]; then
-        echo "Code is not formatted"
-        gofmt -l .
-        exit 1
-      fi
+      - name: Run tests
+        run: go test ./...
 
-  - name: Vet
-    run: go vet ./...
+      - name: Build link-service
+        run: go build ./services/link-service
 
-  - name: Run tests
-    run: go test ./...
+      - name: Build api-service
+        run: go build ./services/api-service
 
-  - name: Build link-service
-    run: go build ./services/link-service
-
-  - name: Build api-service
-    run: go build ./services/api-service
-
-  - name: Build Docker images
-    run: docker compose build
-```
+      - name: Build Docker images
+        run: docker compose build
